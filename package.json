@@ -1,0 +1,13 @@
+{
+  "name": "payments-recon",
+  "version": "0.1.0",
+  "description": "Payments reconciliation: platform transactions vs bank settlements",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate.js",
+    "reconcile": "node scripts/reconcile.js",
+    "test": "node --test",
+    "serve": "npx serve ."
+  },
+  "license": "MIT"
+}

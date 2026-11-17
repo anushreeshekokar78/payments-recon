@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Payments Reconciliation</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#14181f;--mut:#667085;--bd:#e3e6eb;--ac:#2563eb}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1319;--card:#181d26;--tx:#e8ebf0;--mut:#98a1b0;--bd:#2a313d;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,sans-serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:20px;margin:0}.sub{color:var(--mut);font-size:13px}
+.top{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:16px}
+input,button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 10px}
+input{width:90px}button{background:var(--ac);color:#fff;border-color:var(--ac);cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+.k{color:var(--mut);font-size:12px}.v{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums}
+.sc{overflow-x:auto}table{width:100%;border-collapse:collapse}
+th,td{padding:8px;text-align:left;border-bottom:1px solid var(--bd);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;color:#fff;white-space:nowrap}
+.timing{background:#d97706}.rounding{background:#7c3aed}.duplicate{background:#dc2626}.orphan_refund{background:#db2777}.unexplained{background:#64748b}
+h2{font-size:15px;margin:0 0 10px}
+</style></head><body><main>
+<div class="top"><div><h1>Payments reconciliation · October 2026</h1><div class="sub" id="sub"></div></div>
+<div><label class="sub">Seed <input id="seed" type="number" value="42"></label> <button id="go">Regenerate</button></div></div>
+<div class="kpis" id="kpis"></div>
+<div class="card"><h2>Gaps</h2><div class="sc"><table id="tbl"></table></div></div>
+</main>
+<script type="module">
+import { generate } from './src/generate.js';
+import { reconcile } from './src/reconcile.js';
+const inr = (p) => (p < 0 ? '−' : '') + '₹' + (Math.abs(p) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const LABEL = { timing: 'Timing', rounding: 'Rounding', duplicate: 'Duplicate', orphan_refund: 'Orphan refund', unexplained: 'Unexplained' };
+const $ = (s) => document.querySelector(s);
+function run(seed) {
+  const d = generate({ seed }), r = reconcile(d.platform, d.bank);
+  $('#sub').textContent = `${d.platform.length} platform transactions · ${d.bank.length} bank settlements · ${r.matched} matched exactly`;
+  $('#kpis').innerHTML = [['Total platform amount', r.platformTotal], ['Total bank amount', r.bankTotal], ['Difference (platform − bank)', r.difference], ['Unexplained after classification', r.unexplained]]
+    .map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${inr(v)}</div></div>`).join('');
+  $('#tbl').innerHTML = '<tr><th>Type</th><th>ID</th><th class="n">Amount</th><th>Reason</th></tr>' +
+    r.gaps.map((g) => `<tr><td><span class="tag ${g.type}">${LABEL[g.type]}</span></td><td>${g.id}</td><td class="n">${inr(g.amount)}</td><td>${g.reason}</td></tr>`).join('');
+}
+$('#go').onclick = () => run(+$('#seed').value || 1);
+run(42);
+</script></body></html>
